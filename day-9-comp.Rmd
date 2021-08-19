@@ -1,0 +1,109 @@
+---
+title: "Day 9 Comp Session"
+author: "Marie Rivers"
+date: "8/19/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(palmerpenguins)
+library(lubridate)
+library(janitor)
+library(kableExtra)
+```
+### janitor::get_dupes()
+will check for duplicates across all variables unless you specify variables
+```{r}
+starwars_dupes <- get_dupes(starwars)
+
+starwars_dupes_names <- starwars %>% 
+  get_dupes(name)
+
+starwars_dupes_height <- starwars %>% 
+  get_dupes(height)
+
+```
+### dplyr::across()
+allows you to perform operations across multiple columns based on conditions you specify about the columns
+```{r}
+# convert anything that's a character to lower case
+sw_across <- starwars %>% 
+  mutate(across(where(is.character), tolower))
+```
+
+Find the mean of all numeric columns
+```{r}
+starwars %>% 
+  group_by(homeworld) %>% 
+  summarise(across(where(is.numeric), mean, na.rm = TRUE))
+
+
+```
+### some basic and common trouble shooting
+```{r}
+starwars %>% 
+  filter(homeworld = "Naboo")
+
+# Error: Problem with `filter()` input `..1`. x Input `..1` is named. ℹ This usually means that you've used `=` instead of `==`. ℹ Did you mean `homeworld == "Naboo"`? 
+
+# want to use double == to ask "does this match"
+starwars %>% 
+  filter(homeworld == "Naboo")
+```
+```{r}
+starwars %>% 
+  separate(skin_color, into = c("col_1", "col_2"), by = ",")
+# Error: 1 components of `...` were not used. We detected these problematic arguments: * `by` Did you misspecify an argument? 
+
+# look at the documentation, ?separate, to learn that the argument "by" should be "sep"
+starwars %>% 
+  separate(skin_color, into = c("col_1", "col_2"), sep = ",")
+```
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg)) %>% 
+  geom_point()
+# Error: `mapping` must be created by `aes()` Did you use %>% instead of +?
+
+# use + sign instead of pipe operator
+
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point()
+```
+
+```{r}
+penguins %>% 
+  mutate(across(where(is.numeric), as.character)) %>% 
+  mutate(island = fct_relevel(island, c("Dream", "Biscoe", "Torgersen"))) %>% 
+  unite(island_yr, c(island, year), sep = "_") %>% 
+  filter(species %in% c("Adelie", "Chinstrap")) %>% 
+  relocate(year, .after = species) %>% 
+  rename(penguin_spp = species)
+# Error: Can't subset columns that don't exist. x Column `year` doesn't exist.
+```
+```{r}
+# you can run any line by selecting it and hitting command + return (dont select the pipe operator)
+troubleshooting <- penguins %>% 
+  mutate(across(where(is.numeric), as.character)) %>% 
+  mutate(island = fct_relevel(island, c("Dream", "Biscoe", "Torgersen"))) %>% 
+  unite(island_yr, c(island, year), sep = "_") %>% 
+  filter(species %in% c("Adelie", "Chinstrap")) %>% 
+  relocate(year, .after = species) %>% # Error: Can't subset columns that don't exist. x Column `year` doesn't exist. 
+  rename(penguin_spp = species)
+# when we united island and year, both of those columns got replaced by one column, island_yr, so the column "year" no longer existed by the time we got to the relocate line
+```
+## Create a reproducible example
+```{r}
+library(tidyverse)
+# create a simple dataset or table to recreates the problem you are trying to figure out
+df <- tribble(~name, ~height, ~hair_color,
+              "Teddy", 2.2, "brown",
+              "Khora", 3.1, "white",
+              "Waffle", 1.0, "tan")
+df %>% 
+  filter(name == "Waffle")
+
+# select the thing you want to make a reprex, copy it to you clipboard, then in the console, type `reprex()`
+```
+
